@@ -1,7 +1,7 @@
 ---
 title: "Lab 10 - Grading the professor, Pt. 2"
-author: "Insert your name here"
-date: "Insert date here"
+author: "Marq Schieber"
+date: "4/21/22"
 output: github_document
 ---
 
@@ -11,17 +11,127 @@ output: github_document
 library(tidyverse) 
 library(tidymodels)
 library(openintro)
+library(broom)
+library(MASS)
 ```
 
-### Exercise 1
+### Exercise 1 Fit a linear model (one you have fit before): m_bty, predicting average professor evaluation score based on average beauty rating (bty_avg) only. Write the linear model, and note the r-square and the adjusted r-square.
 
-Remove this text, and add your answer for Exercise 1 here.
-Add code chunks as needed.
-Don't forget to label your code chunk.
-Do not use spaces in code chunk labels.
+score = 3.88 + BeautyAvg*.066
+R-square = .035
+Adjusted r-square = .0329
 
-### Exercise 2
+```{r}
+m_bty = lm(score ~ bty_avg, data=evals) 
 
-...
+summary(m_bty)
+```
 
-Add exercise headings as needed.
+### Exercise 2 Fit a linear model (one you have fit before): m_bty_gen, predicting average professor evaluation score based on average beauty rating (bty_avg) and gender. Write the linear model, and note the r-square and the adjusted r-square.
+
+score = 3.74 + BeautyAvf*.074 + Gender*.172
+R-square = .059
+Adjusted r-square = .055
+
+```{r}
+m_bty_gen <- lm(score ~ bty_avg + gender, data=evals)
+
+summary(m_bty_gen)
+```
+
+### Exercise 3 Interpret the slope and intercept of m_bty_gen in context of the data.
+
+The intercept correpsond to scores of female professors with beauty ratings of zero. Male professors (increase .172) that are attractive (incease .074) have the highest evaluation rating.
+
+### Exercise 4 What percent of the variability in score is explained by the model m_bty_gen.
+
+Around 6%
+
+### Exercise 5 What is the equation of the line corresponding to just male professors?
+
+score = 3.74 + BeautyAvg*.074 +.172
+
+### Exercise 6 For two professors who received the same beauty rating, which gender tends to have the higher course evaluation score?
+
+Male
+
+### Exercise 7 How does the relationship between beauty and evaluation score vary between male and female professors?
+
+Unclear based on current analyses, but I expect beauty has a larger effect for women than men.
+
+### Exercise 8 How do the adjusted r-square values of m_bty_gen and m_bty compare? What does this tell us about how useful gender is in explaining the variability in evaluation scores when we already have information on the beauty score of the professor.
+
+m_bty_gen has a larger adjusted r-square. This suggests that gender contributes to the explained variance of the model.
+
+### Exercise 9 Compare the slopes of bty_avg under the two models (m_bty and m_bty_gen). Has the addition of gender to the model changed the parameter estimate (slope) for bty_avg?
+
+Including gender increased the coefficient corresponding to bty_avg. (.066 to .074)
+
+### Exercise 10 Create a new model called m_bty_rank with gender removed and rank added in. Write the equation of the linear model and interpret the slopes and intercept in context of the data.
+
+score = 3.98 + BeautyAvg*.068 - TenureTrack*.161 - Tenured*.130
+
+3.98 is the score of 0 beauty teaching level professors
+
+```{r}
+m_bty_rank <- lm(score ~ bty_avg + rank, data=evals)
+
+summary(m_bty_rank)
+```
+
+
+### Exercise 11 Which variable, on its own, would you expect to be the worst predictor of evaluation scores? Why? Hint: Think about which variable would you expect to not have any association with the professor’s score.
+
+I would say number of students who completed the course eval. I don't think this by itself is very strong. Percentage is a close second, but still has more predictive power because a low percentage of responses indicates a potential self selection bias. 
+
+### Exercise 12 Check your suspicions from the previous exercise. Include the model output for that variable in your response.
+
+score = 4.15 + ClassSz * .0007
+Multiple R-squared:  0.003946,	Adjusted R-squared:  0.001786
+
+Definitely a weak predictor...
+
+```{r}
+m_cls_did_eval <- lm(score ~ cls_did_eval, data=evals)
+
+summary(m_cls_did_eval)
+```
+
+### Exercise 13 Suppose you wanted to fit a full model with the variables listed above. If you are already going to include cls_perc_eval and cls_students, which variable should you not include as an additional predictor? Why?
+
+I htink I've covered them all...Whoops I think cls_students would have been better than what I chose.
+
+### Exercise 14 Fit a full model with all predictors listed above (except for the one you decided to exclude) in the previous question.
+
+```{r}
+m_big_model <- lm(score ~ rank + ethnicity + gender + language + age + cls_perc_eval + cls_students + cls_level + cls_profs + cls_credits + bty_avg, data=evals)
+
+summary(m_big_model)
+
+m_cls_did_eval <- lm(score ~ cls_did_eval, data=evals)
+```
+
+
+### Exercise 15 Using backward-selection with adjusted R-squared as the selection criterion, determine the best model. You do not need to show all steps in your answer, just the output for the final model. Also, write out the linear model for predicting score based on the final model you settle on.
+
+```{r}
+m_best_model<-stepAIC(m_big_model , direction = "backward" , trace = FALSE)
+
+summary(m_best_model)
+```
+
+score = 3.45 + Ethnc*.20 + Gender*.18 - Language*.16 - Age*.005 + PercEval*.005 + Credit*.52 + BTY*.064
+
+### Exercise 16 Interpret the slopes of one numerical and one categorical predictor based on your final model.
+
+As age increases, scores decrease by .005 per year.
+Gender: Male eval scores are higher than females by .18.
+
+### Exercise 17 Based on your final model, describe the characteristics of a professor and course at University of Texas at Austin that would be associated with a high evaluation score.
+
+A high scoring professors would have the following characteristics: White, male, english firt language, young, attractive, teaching a one credit class (aka low stakes class) and there's a high response rate for evaluations.
+
+### Exercise 18 Would you be comfortable generalizing your conclusions to apply to professors generally (at any university)? Why or why not?
+
+I would feel comfortable generalizing this finding to other universities within the US and likely to Western countries (generally speaking, there are definitely exceptions). 
+
